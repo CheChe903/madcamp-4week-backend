@@ -1,6 +1,6 @@
 package com.example.madcamp_4week.support;
 
-import capston.busthecall.support.ApiResponse.FailureBody;
+import com.example.madcamp_4week.support.ApiResponse.FailureBody;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
 import lombok.experimental.UtilityClass;
