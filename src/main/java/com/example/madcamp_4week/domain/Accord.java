@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Entity
 @Getter
 @NoArgsConstructor
@@ -26,8 +24,8 @@ public class Accord {
     private String accordKoreanName;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "atmosphereId")
-    private Atmosphere atmosphere;
+    @JoinColumn(name = "moodId")
+    private Mood mood;
 
     @Column(name = "accordImageUrl")
     private String accordImageUrl;
@@ -36,11 +34,11 @@ public class Accord {
     private String accordExplanation;
 
     @Builder
-    public Accord(String accordName, String accordKoreanName, String accordExplanation, String accordImageUrl, Atmosphere atmosphere) {
+    public Accord(String accordName, String accordKoreanName, String accordExplanation, String accordImageUrl, Mood mood) {
         this.accordName = accordName;
         this.accordKoreanName = accordKoreanName;
         this.accordExplanation = accordExplanation;
         this.accordImageUrl = accordImageUrl;
-        this.atmosphere = atmosphere;
+        this.mood = mood;
     }
 }
