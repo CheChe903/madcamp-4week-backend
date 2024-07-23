@@ -4,6 +4,7 @@ import com.example.madcamp_4week.domain.Mood;
 import com.example.madcamp_4week.domain.dto.response.MoodInfo;
 import com.example.madcamp_4week.domain.dto.response.MoodListInfo;
 import com.example.madcamp_4week.repository.MoodRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,8 @@ public class MoodService {
 
     private final MoodRepository moodRepository;
 
+
+    @Transactional
     public MoodListInfo getAllMoodList() {
         List<Mood> moods = moodRepository.findAll();
         List<MoodInfo> moodInfoList = moods.stream()

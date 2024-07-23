@@ -12,4 +12,6 @@ public class AccordInfo {
     private Long id;
     private String accordName;
     private String accordKoreanName;
+    private String accordImageUrl;
+    private String accordExplanation;
 }
