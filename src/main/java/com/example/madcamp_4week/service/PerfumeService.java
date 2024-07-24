@@ -74,7 +74,6 @@ public class PerfumeService {
                 .map(this::convertToRecommendPerfumeInfo)
                 .collect(Collectors.toList());
 
-        System.out.println("추천된 향수 개수: " + recommendedPerfumes.size());
 
         return RecommendPerfumeInfoList.builder()
                 .recommendPerfumeInfoList(recommendedPerfumes)

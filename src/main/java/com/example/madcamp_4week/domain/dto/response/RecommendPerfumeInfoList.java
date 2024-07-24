@@ -11,5 +11,5 @@ import java.util.List;
 public class RecommendPerfumeInfoList {
 
 
-    List<RecommendPerfumeInfo> recommendPerfumeInfoList;
+    private List<RecommendPerfumeInfo> recommendPerfumeInfoList;
 }

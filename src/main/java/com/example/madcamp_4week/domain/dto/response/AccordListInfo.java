@@ -10,5 +10,5 @@ import java.util.List;
 @Data
 public class AccordListInfo {
 
-    List<AccordInfo> accordInfoList;
+    private List<AccordInfo> accordInfoList;
 }

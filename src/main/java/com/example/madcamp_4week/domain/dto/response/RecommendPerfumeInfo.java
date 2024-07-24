@@ -10,11 +10,11 @@ import java.util.List;
 @Builder
 public class RecommendPerfumeInfo {
 
-    String perfumeName;
-    String perfumeImageUrl;
-    String perfumeBrand;
-    List<String> mainAccords;
-    List<String> topNotes;
-    List<String> middleNotes;
-    List<String> baseNotes;
+    private String perfumeName;
+    private String perfumeImageUrl;
+    private String perfumeBrand;
+    private List<AccordInfo> mainAccords;
+    private List<String> topNotes;
+    private List<String> middleNotes;
+    private List<String> baseNotes;
 }
