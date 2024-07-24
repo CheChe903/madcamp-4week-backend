@@ -3,6 +3,7 @@ package com.example.madcamp_4week.service;
 import com.example.madcamp_4week.domain.Accord;
 import com.example.madcamp_4week.domain.Mood;
 import com.example.madcamp_4week.domain.Perfume;
+import com.example.madcamp_4week.domain.dto.response.AccordInfo;
 import com.example.madcamp_4week.domain.dto.response.RecommendPerfumeInfo;
 import com.example.madcamp_4week.domain.dto.response.RecommendPerfumeInfoList;
 import com.example.madcamp_4week.repository.AccordRepository;
@@ -19,8 +20,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
-
-
 
 @Service
 @Slf4j
@@ -57,11 +56,8 @@ public class PerfumeService {
         Set<String> likedAccords = getLikedAccordsFromIds(likedAccordIds);
         Set<String> dislikedAccords = getDislikedAccordsFromMoods(dislikedMoodIds);
 
-
         List<RecommendPerfumeInfo> recommendedPerfumes = allPerfumes.stream()
-                .filter(perfume -> {
-                    return "unknown".equalsIgnoreCase(gender) || perfume.getGender().equalsIgnoreCase(gender);
-                })
+                .filter(perfume -> "unknown".equalsIgnoreCase(gender) || perfume.getGender().equalsIgnoreCase(gender))
                 .filter(perfume -> {
                     double score = calculateScore(perfume, likedAccords, dislikedAccords);
                     return score > 0;
@@ -74,31 +70,60 @@ public class PerfumeService {
                 .map(this::convertToRecommendPerfumeInfo)
                 .collect(Collectors.toList());
 
-
         return RecommendPerfumeInfoList.builder()
                 .recommendPerfumeInfoList(recommendedPerfumes)
                 .build();
     }
 
     private RecommendPerfumeInfo convertToRecommendPerfumeInfo(Perfume perfume) {
+        List<AccordInfo> mainAccords = perfume.getMainAccords().stream()
+                .map(this::removePercentage)
+                .map(accordName -> {
+                    // Accord 이름으로 Accord를 찾되, 여러 결과를 반환
+                    List<Accord> accords = accordRepository.findByAccordName(accordName);
+                    if (accords.isEmpty()) {
+                        log.warn("Accord not found for name: {}", accordName);
+                        return AccordInfo.builder()
+                                .accordName(accordName)
+                                .build(); // 필수 필드만 설정
+                    }
+
+                    // 결과 중 첫 번째 항목만 선택
+                    Accord accord = accords.get(0);
+                    return AccordInfo.builder()
+                            .id(accord.getId())
+                            .accordName(accord.getAccordName())
+                            .accordKoreanName(accord.getAccordKoreanName())
+                            .accordImageUrl(accord.getAccordImageUrl())
+                            .accordExplanation(accord.getAccordExplanation())
+                            .build();
+                })
+                .distinct() // 중복 제거
+                .limit(3) // 결과를 3개로 제한
+                .collect(Collectors.toList());
+
         return RecommendPerfumeInfo.builder()
                 .perfumeName(perfume.getPerfumeName())
                 .perfumeImageUrl(perfume.getPerfumeImageUrl())
                 .perfumeBrand(perfume.getPerfumeBrand())
-                .mainAccords(perfume.getMainAccords())
+                .mainAccords(mainAccords)
                 .topNotes(perfume.getTopNotes())
                 .middleNotes(perfume.getMiddleNotes())
                 .baseNotes(perfume.getBaseNotes())
                 .build();
     }
 
+    private String removePercentage(String accordName) {
+        // 퍼센트 값을 제거하여 순수한 accordName 추출
+        int percentIndex = accordName.indexOf('(');
+        return percentIndex == -1 ? accordName : accordName.substring(0, percentIndex).trim();
+    }
     private Set<String> getLikedAccordsFromIds(List<Long> accordIds) {
         if (accordIds == null || accordIds.isEmpty()) {
             return Collections.emptySet();
         }
         return accordRepository.findAllById(accordIds).stream()
-                .map(Accord::getAccordName)
-                .map(String::toLowerCase) // 소문자로 변환
+                .map(Accord::getAccordName) // 소문자 변환 제거
                 .collect(Collectors.toSet());
     }
 
@@ -108,19 +133,16 @@ public class PerfumeService {
         }
         return moodRepository.findAllById(moodIds).stream()
                 .flatMap(mood -> mood.getAccords().stream())
-                .map(Accord::getAccordName)
-                .map(String::toLowerCase) // 소문자로 변환
+                .map(Accord::getAccordName) // 소문자 변환 제거
                 .collect(Collectors.toSet());
     }
 
     private double calculateScore(Perfume perfume, Set<String> likedAccords, Set<String> dislikedAccords) {
-        Set<String> mainAccords = perfume.getMainAccords().stream()
-                .map(String::toLowerCase) // 소문자로 변환
-                .collect(Collectors.toSet());
+        Set<String> mainAccords = new HashSet<>(perfume.getMainAccords());
         Set<String> allNotes = new HashSet<>();
-        allNotes.addAll(perfume.getTopNotes().stream().map(String::toLowerCase).collect(Collectors.toSet())); // 소문자로 변환
-        allNotes.addAll(perfume.getMiddleNotes().stream().map(String::toLowerCase).collect(Collectors.toSet())); // 소문자로 변환
-        allNotes.addAll(perfume.getBaseNotes().stream().map(String::toLowerCase).collect(Collectors.toSet())); // 소문자로 변환
+        allNotes.addAll(perfume.getTopNotes());
+        allNotes.addAll(perfume.getMiddleNotes());
+        allNotes.addAll(perfume.getBaseNotes());
 
         double likeScore = likedAccords.stream()
                 .filter(accord -> mainAccords.contains(accord) || allNotes.contains(accord))
@@ -140,12 +162,21 @@ public class PerfumeService {
                 .perfumeBrand(columns[2].trim())
                 .perfumeImageUrl(columns[3].trim())
                 .gender(columns[4].trim())
-                .mainAccords(parseList(columns[5]))
-                .topNotes(parseList(columns[6]))
-                .middleNotes(parseList(columns[7]))
-                .baseNotes(parseList(columns[8]))
+                .mainAccords(parseList(columns[5]).stream()
+                        .map(String::toLowerCase)
+                        .collect(Collectors.toList()))
+                .topNotes(parseList(columns[6]).stream()
+                        .map(String::toLowerCase)
+                        .collect(Collectors.toList()))
+                .middleNotes(parseList(columns[7]).stream()
+                        .map(String::toLowerCase)
+                        .collect(Collectors.toList()))
+                .baseNotes(parseList(columns[8]).stream()
+                        .map(String::toLowerCase)
+                        .collect(Collectors.toList()))
                 .build();
     }
+
 
     private List<String> parseList(String data) {
         return Arrays.stream(data.split(";"))
@@ -153,4 +184,3 @@ public class PerfumeService {
                 .collect(Collectors.toList());
     }
 }
-
