@@ -39,3 +39,4 @@ out/
 application.yml
 
 .DS_Store
+docker-compose.yml
