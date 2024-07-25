@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -75,11 +74,61 @@ public class PerfumeService {
                 .build();
     }
 
+    public RecommendPerfumeInfoList getRandomPerfumesByMood(Long moodId) {
+        Optional<Mood> moodOptional = moodRepository.findById(moodId);
+        if (moodOptional.isEmpty()) {
+            log.warn("Mood not found for id: {}", moodId);
+            return RecommendPerfumeInfoList.builder()
+                    .recommendPerfumeInfoList(Collections.emptyList())
+                    .build();
+        }
+
+        Mood mood = moodOptional.get();
+        List<Accord> accords = mood.getAccords();
+
+        if (accords.isEmpty()) {
+            log.warn("No accords found for mood id: {}", moodId);
+            return RecommendPerfumeInfoList.builder()
+                    .recommendPerfumeInfoList(Collections.emptyList())
+                    .build();
+        }
+
+        Set<String> accordNames = accords.stream()
+                .map(Accord::getAccordName)
+                .map(this::removePercentage)
+                .collect(Collectors.toSet());
+
+        List<Perfume> perfumes = perfumeRepository.findAll().stream()
+                .filter(perfume -> perfume.getMainAccords().stream()
+                        .map(this::removePercentage)
+                        .anyMatch(accordNames::contains))
+                .collect(Collectors.toList());
+
+        List<Perfume> randomPerfumes = getRandomSubset(perfumes, 6);
+
+        List<RecommendPerfumeInfo> recommendPerfumeInfos = randomPerfumes.stream()
+                .map(this::convertToRecommendPerfumeInfo)
+                .collect(Collectors.toList());
+
+        return RecommendPerfumeInfoList.builder()
+                .recommendPerfumeInfoList(recommendPerfumeInfos)
+                .build();
+    }
+
+
+    private <T> List<T> getRandomSubset(List<T> list, int count) {
+        if (list.size() <= count) {
+            return list;
+        }
+
+        Collections.shuffle(list); // 리스트를 랜덤으로 섞음
+        return list.subList(0, count);
+    }
+
     private RecommendPerfumeInfo convertToRecommendPerfumeInfo(Perfume perfume) {
         List<AccordInfo> mainAccords = perfume.getMainAccords().stream()
                 .map(this::removePercentage)
                 .map(accordName -> {
-                    // Accord 이름으로 Accord를 찾되, 여러 결과를 반환
                     List<Accord> accords = accordRepository.findByAccordName(accordName);
                     if (accords.isEmpty()) {
                         log.warn("Accord not found for name: {}", accordName);
@@ -88,7 +137,6 @@ public class PerfumeService {
                                 .build(); // 필수 필드만 설정
                     }
 
-                    // 결과 중 첫 번째 항목만 선택
                     Accord accord = accords.get(0);
                     return AccordInfo.builder()
                             .id(accord.getId())
@@ -118,12 +166,13 @@ public class PerfumeService {
         int percentIndex = accordName.indexOf('(');
         return percentIndex == -1 ? accordName : accordName.substring(0, percentIndex).trim();
     }
+
     private Set<String> getLikedAccordsFromIds(List<Long> accordIds) {
         if (accordIds == null || accordIds.isEmpty()) {
             return Collections.emptySet();
         }
         return accordRepository.findAllById(accordIds).stream()
-                .map(Accord::getAccordName) // 소문자 변환 제거
+                .map(Accord::getAccordName)
                 .collect(Collectors.toSet());
     }
 
@@ -133,7 +182,7 @@ public class PerfumeService {
         }
         return moodRepository.findAllById(moodIds).stream()
                 .flatMap(mood -> mood.getAccords().stream())
-                .map(Accord::getAccordName) // 소문자 변환 제거
+                .map(Accord::getAccordName)
                 .collect(Collectors.toSet());
     }
 
@@ -176,7 +225,6 @@ public class PerfumeService {
                         .collect(Collectors.toList()))
                 .build();
     }
-
 
     private List<String> parseList(String data) {
         return Arrays.stream(data.split(";"))

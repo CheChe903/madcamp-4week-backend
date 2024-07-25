@@ -14,4 +14,5 @@ public class AccordInfo {
     private String accordKoreanName;
     private String accordImageUrl;
     private String accordExplanation;
+    private Long moodId;
 }

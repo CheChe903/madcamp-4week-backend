@@ -30,6 +30,9 @@ public class Mood {
     @Column(name = "moodExplanation")
     private String moodExplanation;
 
+    @Column(name = "moodColorUrl")
+    private String moodColorUrl;
+
     @OneToMany(mappedBy = "mood", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Accord> accords;
 

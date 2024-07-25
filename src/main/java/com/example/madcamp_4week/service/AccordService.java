@@ -20,7 +20,7 @@ public class AccordService {
     private static final int ACCORD_LIMIT = 7;
 
 
-    @Transactional
+        @Transactional
     public AccordListInfo getAccordsByMoodList(List<Integer> moodIds) {
         List<Accord> allAccords = new ArrayList<>();
 
@@ -49,6 +49,7 @@ public class AccordService {
                 .accordKoreanName(accord.getAccordKoreanName())
                 .accordImageUrl(accord.getAccordImageUrl())
                 .accordExplanation(accord.getAccordExplanation())
+                .moodId(accord.getMood().getId())
                 .build();
     }
 }

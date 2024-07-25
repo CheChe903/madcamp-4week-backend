@@ -38,6 +38,7 @@ public class MoodService {
                 .moodKoreanName(mood.getMoodKoreanName())
                 .moodImageUrl(mood.getMoodImageUrl())
                 .moodExplanation(mood.getMoodExplanation())
+                .moodColorUrl(mood.getMoodColorUrl())
                 .build();
     }
 

@@ -13,4 +13,5 @@ public class MoodInfo {
     private String moodKoreanName;
     private String moodImageUrl;
     private String moodExplanation;
+    private String moodColorUrl;
 }
